@@ -33,7 +33,7 @@
 
 ```bash
 git clone https://github.com/RenanAlvesSilva/AnalyzerAI.git
-cd AnalyzerAI
+cd Analyze
 
 2️⃣ Crie e ative o ambiente virtual
 python -m venv venv
@@ -54,7 +54,10 @@ python manage.py migrate
 6️⃣ Suba o servidor Django
 python manage.py runserver
 
-7️⃣ Inicie o Celery
+7️⃣ Com Docker aberto rode no CMD
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
+
+8️⃣ Inicie o Celery
 Em outro terminal:
 celery -A analyzer_ai worker -l info
 
