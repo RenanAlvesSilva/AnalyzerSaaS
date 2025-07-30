@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'user',
 ]
 
 EXTERNAL_APPS = [
@@ -138,3 +139,6 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False, # Não inclui o schema JSON na página inicial do Swagger/Redoc
 }
+
+#modelo de usuários 
+AUTH_USER_MODEL = 'user.CostumerUser'
