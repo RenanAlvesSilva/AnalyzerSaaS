@@ -8,7 +8,9 @@ class CostumerUser(AbstractBaseUser,PermissionsMixin):
     email = models.EmailField(unique=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
+    is_manager = models.BooleanField(default=False)
+    is_employee = models.BooleanField(default=False)
     
     groups = models.ManyToManyField(Group, blank=True)
     user_permissions = models.ManyToManyField(Permission, blank=True)

@@ -5,6 +5,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.views import APIView
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 
 class CostumerUserViewSet(viewsets.ModelViewSet):
     queryset = CostumerUser.objects.all()
@@ -22,3 +25,20 @@ class CostumerUserViewSet(viewsets.ModelViewSet):
         user = request.user
         serializer = CostumerUserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ConfirmEmailView(APIView):
+    
+    def get(self, request, uidb64, token, format=None, *args , **kwargs):
+        
+        try:
+           uid = urlsafe_base64_decode(uidb64).decode()
+           user = CostumerUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CostumerUser.DoesNotExist):
+            return Response({"error": "Usuário nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.is_manager = True
+            user.save()
+            return Response({"message": "Usuário ativado com sucesso!"}, status=status.HTTP_200_OK)
+        else: Response({"error": "Link de ativacao invalido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
