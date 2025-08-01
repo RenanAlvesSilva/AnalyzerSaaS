@@ -1,11 +1,18 @@
 from rest_framework import serializers
 from .models import *
+from user.templates.emails.tasks import send_user_token_email
+
 
 class CostumerUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CostumerUser
-        fields = ["id", "name", "last_name", "email", "password", "is_staff"]
-        extra_kwargs = {"password": {"write_only": True}}
+        fields = ["id", "name", "last_name", "email", "password", "is_staff", "is_manager", "is_employee", "is_active"]
+        extra_kwargs = {"password": {"write_only": True},
+                        "is_activate": {"read_only": True},
+                        "is_staff": {"read_only": True},
+                        "is_manager": {"read_only": True},
+                        "is_employee": {"read_only": True}
+                        }
         
     def create(self,validated_data):
             
@@ -14,6 +21,12 @@ class CostumerUserSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.is_staff = False
             user.save()
+            send_user_token_email(
+                user.pk, 
+                "Confirmação de Email", 
+                "api/v1/confirm-email", 
+                "Confirmação de conta",
+                message_template="emails/message_email.txt")
             return user
         
     def validate_name(self, value):

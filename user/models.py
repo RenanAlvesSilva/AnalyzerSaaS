@@ -19,6 +19,11 @@ class CostumerUser(AbstractBaseUser,PermissionsMixin):
     REQUIRED_FIELDS = ['name', 'last_name']
     
     objects = CustomUserManager()
+    
+    def activate_as_manager(self):
+        self.is_active = True
+        self.is_manager = True
+        self.save()
 
     def __str__(self):
         return self.email

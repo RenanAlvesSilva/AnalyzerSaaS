@@ -8,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import *
 
 class CostumerUserViewSet(viewsets.ModelViewSet):
     queryset = CostumerUser.objects.all()
@@ -27,18 +29,17 @@ class CostumerUserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class ConfirmEmailView(APIView):
-    
+    permission_classes = [AllowAny]
     def get(self, request, uidb64, token, format=None, *args , **kwargs):
         
         try:
+           User = get_user_model()
            uid = urlsafe_base64_decode(uidb64).decode()
-           user = CostumerUser.objects.get(pk=uid)
+           user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, CostumerUser.DoesNotExist):
             return Response({"error": "Usuário nao encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
         if default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.is_manager = True
-            user.save()
+            user.activate_as_manager()
             return Response({"message": "Usuário ativado com sucesso!"}, status=status.HTTP_200_OK)
-        else: Response({"error": "Link de ativacao invalido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+        else: return Response({"error": "Link de ativacao invalido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
