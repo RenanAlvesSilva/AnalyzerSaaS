@@ -43,3 +43,8 @@ class ConfirmEmailView(APIView):
             user.activate_as_manager()
             return Response({"message": "Usuário ativado com sucesso!"}, status=status.HTTP_200_OK)
         else: return Response({"error": "Link de ativacao invalido ou expirado."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    
+    pass
