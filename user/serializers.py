@@ -54,4 +54,20 @@ class CostumerUserSerializer(serializers.ModelSerializer):
             if not any( c in value for c in "!@#$%&*"):
                 raise serializers.ValidationError("A senha deve conter pelo menos um caractére especial.")
             return value    
-                
+        
+
+class ChangePasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+    
+    def validate_new_password(self, value):
+        return CostumerUserSerializer.validate_password(self, value)
+    
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            return serializers.ValidationError("As senhas devem ser iguais.")
+        return data
+    
+    def save(self, user):
+        user.set_password(self.validated_data['new_password'])
+        return user
