@@ -1,0 +1,8 @@
+Olá {{ user.name }}
+
+Você solicitou uma {{ action }}
+Clique no link abaixo:
+
+{{ link }}
+
+Se não foi você que fez a solicitação, por favor ignore esse email.
