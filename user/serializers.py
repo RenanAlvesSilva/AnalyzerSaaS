@@ -30,8 +30,8 @@ class CostumerUserSerializer(serializers.ModelSerializer):
             if not value or len(value) < 3:
                 raise serializers.ValidationError("O sobrenome não posso ser um campo vazio ou menor que 3 caractéres.")
             if not all(part.isalpha() for part in value.split()):
-                raise serializers.ValidationError("O nome deve conter apenas letras e espaços.")
-
+                raise serializers.ValidationError("O sobrenome deve conter apenas letras e espaços.")
+            
             return value
         
     def validate_password(self,value):
@@ -52,7 +52,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     
     def validate(self, data):
         if data['new_password'] != data['confirm_password']:
-            return serializers.ValidationError("As senhas devem ser iguais.")
+            raise serializers.ValidationError("As senhas devem ser iguais.")
         return data
     
     def save(self, user):
