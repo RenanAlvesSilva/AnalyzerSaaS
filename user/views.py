@@ -67,17 +67,9 @@ class PostResetPasswordView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            email = serializer.validated_data.get('email')
-            user = CostumerUser.objects.filter(email=email).first()
-            if user:
-                send_user_token_email(
-                    user.pk, 
-                    "Redefinição de Senha", 
-                    "api/v1/reset-password", 
-                    "Redefinição de senha",
-                    message_template="emails/message_email.txt")
-                return Response({"message": "Caso seja encontrado o email enviaremos instruções para redefinir a senha."}, status=status.HTTP_200_OK)
-            return Response({"error": "Nenhum usuário encontrado com este email."}, status=status.HTTP_404_NOT_FOUND)
+            serializer.save()
+            return Response({"message": "Caso seja encontrado o email enviaremos instruções para redefinir a senha."}, status=status.HTTP_200_OK)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
