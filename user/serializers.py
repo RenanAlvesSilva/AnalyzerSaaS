@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import *
 from user.templates.emails.tasks import send_user_token_email
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.password_validation import validate_password
 
 
 class CostumerUserSerializer(serializers.ModelSerializer):
@@ -57,6 +60,40 @@ class CostumerUserSerializer(serializers.ModelSerializer):
         
 
 class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+    
+    def validate_new_password(self, value):
+        return CostumerUserSerializer.validate_password(self, value)
+    
+    def validate(self, data):
+        user = self.context['user']
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("As senhas devem ser iguais.")
+        if not user.check_password(data['old_password']):
+            raise serializers.ValidationError("A senha atual está incorreta.")
+        return data
+    
+    def save(self):
+        user = self.context['user']
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    
+    def validate_email(self, value):
+        if not CostumerUser.objects.filter(email=value).first():
+            raise serializers.ValidationError("Nenhum usuário encontrado com este email.")
+        return value
+    
+
+class ResetPasswordConfirmSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
     confirm_password = serializers.CharField(required=True)
     
@@ -66,10 +103,21 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate(self, data):
         if data['new_password'] != data['confirm_password']:
             raise serializers.ValidationError("As senhas devem ser iguais.")
+        try:
+            uid = urlsafe_base64_decode(data('uidb64')).decode()
+            user = CostumerUser.objects.get(pk=id)
+        except (TypeError, ValueError, OverflowError, CostumerUser.DoesNotExist):
+            raise serializers.ValidationError("Usuário não encontrado.")
+        if not default_token_generator.check_token(user, data['token']):
+            raise serializers.ValidationError("Token inválido ou expirado.")
+        
+        validate_password(data['new_password'], user)
+        data['user'] = user
         return data
     
     def save(self, user):
         user.set_password(self.validated_data['new_password'])
+        user.save()
         return user
     
     
