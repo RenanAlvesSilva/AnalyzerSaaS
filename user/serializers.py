@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from user.templates.emails.tasks import send_user_token_email
+from .tasks import send_user_token_email
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.password_validation import validate_password

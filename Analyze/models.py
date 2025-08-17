@@ -1,7 +1,8 @@
 from django.db import models
+from django.conf import settings
 
 class Analyzer(models.Model):
-    
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='usuarios', blank=False, null=False)
     file = models.FileField(upload_to='analisados/')
     extracted_text = models.TextField(blank=True, null=True)
     resume_analyze = models.TextField(blank=True, null=True)

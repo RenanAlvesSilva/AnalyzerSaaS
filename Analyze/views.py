@@ -9,9 +9,12 @@ from rest_framework import status
 
 
 class AnalyzerViewSet(viewsets.ModelViewSet):
-    queryset = Analyzer.objects.all()
     serializer_class = AnalyzerSerializer
     permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        return Analyzer.objects.filter(usuario=self.request.user)
+    
      
     def create(self, request,*args, **kwargs):
         area_atuacao = request.data.get('area_atuacao', None)
@@ -37,7 +40,7 @@ class AnalyzerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_bulk_create(self, serializer):
-        instances = serializer.save()
+        instances = serializer.save(usuario=self.request.user)
         for instance in instances:
            analyze_ai_task.delay(instance.id)
           
