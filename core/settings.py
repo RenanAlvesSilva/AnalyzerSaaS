@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'user',
     'payment',
+    'corsheaders',
 ]
 
 EXTERNAL_APPS = [
@@ -40,6 +41,7 @@ EXTERNAL_APPS += INSTALLED_APPS
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -138,7 +140,7 @@ SIMPLE_JWT = {
 # (Opcional) Configurações básicas para a documentação
 SPECTACULAR_SETTINGS = {
     'TITLE': 'API de Análise de Currículos com IA',
-    'DESCRIPTION': 'Documentação básica da minha API com JWT',
+    'DESCRIPTION': 'Documentação da API com JWT',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False, # Não inclui o schema JSON na página inicial do Swagger/Redoc
 }
@@ -155,3 +157,6 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 #modelo de usuários 
 AUTH_USER_MODEL = 'user.CostumerUser'
+
+#CORSHEADERS
+CORS_ORIGIN_ALLOW_ALL = True

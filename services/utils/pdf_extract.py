@@ -1,14 +1,13 @@
 import PyPDF2
-
+from typing import IO
 
 class ExtractPDF:
-    def extract_text_from_pdf(self,pdf_path):
+    def extract_text_from_pdf(self,pdf_stream: IO[bytes]):
         try:
-            with open(pdf_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                text = ''
-                for page in pdf_reader.pages:
-                    text += page.extract_text() or ''
+            pdf_reader = PyPDF2.PdfReader(pdf_stream)
+            text = ''
+            for page in pdf_reader.pages:
+                text += page.extract_text() or ''
                     
                 return text
         except Exception as e:

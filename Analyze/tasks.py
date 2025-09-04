@@ -5,38 +5,60 @@ from services.utils.pdf_extract import ExtractPDF
 
 
 
-@shared_task
-def analyze_ai_task(analyzer_id):
+@shared_task(bind=True) # Usar bind=True é uma boa prática para ter acesso ao contexto da task
+def analyze_ai_task(self, analyzer_id):
+    
     try:
-        instance = Analyzer.objects.get(id = analyzer_id)
+        instance = Analyzer.objects.get(id=analyzer_id)
+    except Analyzer.DoesNotExist:
+        print(f"Analyzer com ID {analyzer_id} não encontrado. A tarefa não será executada.")
+        return #
+
+    try:
+        #
+        print(f"Iniciando extração para o Analyzer ID: {analyzer_id}")
+        extract_service = ExtractPDF()
         
-        extract_text = ExtractPDF()
-        instance.file.open()
-        instance.file.close()
-        extracted = extract_text.extract_text_from_pdf(instance.file.path)
-        instance.extracted_text = extracted
+       
+        with instance.file.open('rb') as pdf_file_stream:
+            extracted_text = extract_service.extract_text_from_pdf(pdf_file_stream)
+
+        if not extracted_text:
+            print(f"Não foi possível extrair texto do arquivo para o Analyzer ID: {analyzer_id}. Encerrando.")
+           
+            instance.status = 'FALHA_EXTRACAO'
+            instance.save()
+            return
+
+       
+        instance.extracted_text = extracted_text
         
-        
-        if extracted:
-            resume_ai = AnalyzerAI()
-            analyze_resume = resume_ai.Analyzer_gemini(
-                resume_text=extracted,
-                area_atuacao=instance.area_atuacao,
-                nivel_senioridade=instance.nivel_senioridade,
-                palavras_chave=instance.palavras_chave or [],
-                nome_vaga=instance.nome_vaga
-            )
-            instance.resume_analyze = analyze_resume
-            print("Extraído com sucesso:", bool(extracted))
-            print("Palavras-chave:", instance.palavras_chave)
-            print("Nome da vaga:", instance.nome_vaga)
+        instance.save(update_fields=['extracted_text'])
+        print(f"Texto extraído e salvo para o Analyzer ID: {analyzer_id}")
+
+        print(f"Enviando texto para análise de IA para o Analyzer ID: {analyzer_id}")
+        resume_ai = AnalyzerAI()
+        analysis_result = resume_ai.Analyzer_gemini(
+            resume_text=extracted_text,
+            area_atuacao=instance.area_atuacao,
+            nivel_senioridade=instance.nivel_senioridade,
+            palavras_chave=instance.palavras_chave or [], 
+            nome_vaga=instance.nome_vaga
+        )
 
         
-        instance.save()
-        
-    except Analyzer.DoesNotExist:
-        print(f"Analyse com ID {analyzer_id} não encontrado.")
+        instance.resume_analyze = analysis_result
+        instance.status = 'CONCLUIDO' 
+        instance.save(update_fields=['resume_analyze'])
+        print(f"Análise de IA concluída e salva para o Analyzer ID: {analyzer_id}")
+
+        return f"Processamento do Analyzer {analyzer_id} concluído com sucesso."
+
     except Exception as e:
-        print(f"Erro ao processar a análise AI para o ID {analyzer_id}: {str(e)}")
-            
-    
+        print(f"Ocorreu um erro inesperado no processamento do Analyzer ID {analyzer_id}: {str(e)}")
+        try:
+            instance.status = 'ERRO'
+            raise self.retry(exc=e, countdown=60) 
+        except self.MaxRetriesExceededError:
+            print(f"Máximo de tentativas atingido para o Analyzer ID {analyzer_id}.")
+

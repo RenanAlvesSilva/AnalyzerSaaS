@@ -5,15 +5,15 @@ from .tasks import analyze_ai_task
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 
 
 class AnalyzerViewSet(viewsets.ModelViewSet):
     serializer_class = AnalyzerSerializer
-    permission_classes = [AllowAny]
-    
-    def get_queryset(self):
-        return Analyzer.objects.filter(usuario=self.request.user)
+    permission_classes = [IsAuthenticated]
+    queryset = Analyzer.objects.all()
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
      
     def create(self, request,*args, **kwargs):
@@ -40,7 +40,10 @@ class AnalyzerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_bulk_create(self, serializer):
-        instances = serializer.save(usuario=self.request.user)
+        instances = serializer.save(
+            usuario=self.request.user,
+            
+        )
         for instance in instances:
-           analyze_ai_task.delay(instance.id)
+            analyze_ai_task.delay(instance.id)
           
