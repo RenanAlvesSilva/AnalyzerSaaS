@@ -6,8 +6,10 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
-
+from rest_framework.views import APIView
+from celery.result import AsyncResult
+from rest_framework.response import Response
+from rest_framework import status
 
 class AnalyzerViewSet(viewsets.ModelViewSet):
     serializer_class = AnalyzerSerializer
@@ -46,4 +48,16 @@ class AnalyzerViewSet(viewsets.ModelViewSet):
         )
         for instance in instances:
             analyze_ai_task.delay(instance.id)
+            
+            
+class TaskStatusView(APIView):
+    def get(self, request,task_id, *args, **kwargs):
+        task_result = AsyncResult(task_id)
+        result = {
+            'task_id': task_id,
+            'status': task_result.status,
+            'result': task_result.result if task_result.ready() else None
+        }
+        
+        return Response(result, status=status.HTTP_200_OK)
           

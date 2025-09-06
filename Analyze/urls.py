@@ -7,4 +7,5 @@ router.register('analyzer', AnalyzerViewSet, basename='analyzer')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task-status'),
 ]
