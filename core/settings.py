@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'user',
     'payment',
     'corsheaders',
+    'django_celery_results',
 ]
 
 EXTERNAL_APPS = [
@@ -116,6 +117,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CELERY_BROKER_URL =  'amqp://guest:guest@localhost:5672//' #URL PARA CONECTAR NO RABBITMQ
 CELERY_TIMEZONE = 'America/Sao_Paulo'
+CELERY_RESULT_BACKEND = 'django-db'
 
 
 

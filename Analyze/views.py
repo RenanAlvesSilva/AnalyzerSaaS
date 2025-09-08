@@ -37,20 +37,29 @@ class AnalyzerViewSet(viewsets.ModelViewSet):
          
         serializer = self.get_serializer(data=dados, many=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_bulk_create(serializer)
+        response_data =self.perform_bulk_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
     
     def perform_bulk_create(self, serializer):
+    
         instances = serializer.save(
             usuario=self.request.user,
-            
+            status='NA_FILA'
         )
+        tasks_info = []
         for instance in instances:
-            analyze_ai_task.delay(instance.id)
+            task = analyze_ai_task.delay(instance.id)
+            tasks_info.append({
+                'analyzer_id': instance.id,
+                'task_id': task.id
+            })
+        return tasks_info
             
             
 class TaskStatusView(APIView):
+    queryset = Analyzer.objects.all()
+    permission_classes = [IsAuthenticated]
     def get(self, request,task_id, *args, **kwargs):
         task_result = AsyncResult(task_id)
         result = {
