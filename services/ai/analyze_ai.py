@@ -30,22 +30,32 @@ class AnalyzerAI:
         try:
             cliente = genai.Client(api_key=config("GEMINI_API_KEY"))
             prompt = f"""
-                Você é um recrutador técnico responsável por selecionar candidatos para a vaga de {nome_vaga}, na área de {area_atuacao}.
-                Vou te fornecer o texto bruto de um currículo. Analise detalhadamente e responda com base nos seguintes critérios:
+               Sua única tarefa é atuar como um classificador de currículos. Analise o texto do currículo fornecido com base nos critérios da vaga e nas palavras-chave.
 
-                1. O candidato parece compatível com a vaga de {nome_vaga}? Considere a área de atuação percebida e o nível de senioridade estimado ({nivel_senioridade})
-                2. Quais pontos fortes se destacam no currículo, especialmente nas características: {', '.join(palavras_chave)}
-                3. Quais são os principais pontos de melhoria?
-                4. Sugestões de tecnologias ou competências para desenvolver, visando maior aderência à vaga
-                5. Cargos alternativos que possam ser mais adequados ao perfil
-                6. Caso faltem informações importantes, indique de forma gentil o que pode ser complementado
-                
+                **Critérios da Vaga:**
+                - Nome da Vaga: '{nome_vaga}'
+                - Área de Atuação: '{area_atuacao}'
+                - Nível de Senioridade: '{nivel_senioridade}'
+                - Palavras-chave para buscar: {palavras_chave}
 
-                Importante: Considere sinônimos e variações das palavras-chave mencionadas. Se o candidato estiver em início de carreira, adote um tom incentivador e realista.
+                **Instruções de Saída:**
+                Responda **APENAS e SOMENTE** com um objeto JSON válido, sem saudações, explicações ou qualquer texto fora do JSON.
+                O objeto JSON deve ter a seguinte estrutura e tipos de dados:
+                {{
+                "apto": boolean,
+                "palavras_chave_encontradas": ["array de strings"],
+                "justificativa": "string"
+                }}
 
-                Após este prompt, será enviado apenas o texto do currículo.
+                **Regras para os campos:**
+                1.  `apto`: Deve ser `true` se o candidato for minimamente qualificado e atender a pelo menos algumas das palavras-chave principais. Caso contrário, deve ser `false`.
+                2.  `palavras_chave_encontradas`: Deve ser um array contendo **apenas** as palavras-chave da lista fornecida que foram encontradas no texto do currículo. Se nenhuma for encontrada, retorne um array vazio `[]`.
+                3.  `justificativa`: Uma frase curta (máximo de 25 palavras) explicando o porquê da decisão no campo "apto".
 
-                Responda de forma clara e objectiva, resumindo ao máximo sua resposta para maior agilidade na análise.
+                **Texto do Currículo para Análise:**
+                ---
+                {resume_text}
+                ---
             """
             
             response = cliente.models.generate_content(

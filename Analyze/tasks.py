@@ -2,6 +2,8 @@ from celery import shared_task
 from .models import Analyzer
 from services.ai.analyze_ai import AnalyzerAI
 from services.utils.pdf_extract import ExtractPDF
+import json
+import re
 
 
 
@@ -45,14 +47,26 @@ def analyze_ai_task(self, analyzer_id):
             palavras_chave=instance.palavras_chave or [], 
             nome_vaga=instance.nome_vaga
         )
-
+    
         
         instance.resume_analyze = analysis_result
         instance.status = 'CONCLUIDO' 
         instance.save(update_fields=['resume_analyze'])
         print(f"Análise de IA concluída e salva para o Analyzer ID: {analyzer_id}")
+        match = re.search(r'\{.*\}', analysis_result, re.DOTALL)
+        if not match:
+            print(f"Erro de Regex: Nnehum JSON encontrado na resposta da IA")
+            instance.status = 'FALHA'
+            instance.save(update_fields=['status'])
+            return {"error": 'A resposta da IA não contém um JSON válido.', "resposta recebida": analysis_result}
+        json_string_clear = match.group(0)
+        try:
+            analysis_result_dict = json.loads(json_string_clear)
+        except json.JSONDecodeError as e:
+            print(f'Erro ao converter a resposta da IA em Json: {str(e)}')
+            return {"error": 'A resposta da IA não era um JSON válido.', "resposta recebida": analysis_result}
 
-        return f"Processamento do Analyzer {analyzer_id} concluído com sucesso."
+        return analysis_result_dict
 
     except Exception as e:
         print(f"Ocorreu um erro inesperado no processamento do Analyzer ID {analyzer_id}: {str(e)}")
